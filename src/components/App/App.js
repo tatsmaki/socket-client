@@ -1,35 +1,51 @@
 import React, { useState, useEffect } from 'react'
+import { Message } from 'components/blocks/Message'
 import { socket } from 'socket'
 import {
   JOIN_ROOM,
   RECEIVE_MESSAGE,
   SENT_MESSAGE,
+  USER_CONNECTED,
   USER_DISCONNECTED,
+  USER_ID,
 } from 'constants'
 
 const App = () => {
   const [newMessage, setNewMessage] = useState('')
   const [chatHistory, setChatHistory] = useState([])
 
-  const joinSocketRoom = () => {
-    socket.emit(JOIN_ROOM, { room: 'room_name', id: Math.random() })
+  const handleIncomingMessage = ({ message, from }) => {
+    setChatHistory((prevState) => [
+      ...prevState,
+      { message, from, id: prevState.length },
+    ])
   }
 
-  const handleIncomingMessage = (incomingMessage) => {
-    setChatHistory((prevState) => [...prevState, incomingMessage])
+  const joinSocketRoom = () => {
+    socket.emit(JOIN_ROOM, {
+      room: 'room_name',
+      id: USER_ID,
+    })
+    handleIncomingMessage({ message: `Hi, ${USER_ID}.` })
+  }
+
+  const handleUserConnect = (userId) => {
+    handleIncomingMessage({ message: `${userId} connected` })
   }
 
   const handleUserDisconnect = (userId) => {
-    handleIncomingMessage(`${userId} disconnected`)
+    handleIncomingMessage({ message: `${userId} disconnected` })
   }
 
   const addSocketListeners = () => {
     socket.on(RECEIVE_MESSAGE, handleIncomingMessage)
+    socket.on(USER_CONNECTED, handleUserConnect)
     socket.on(USER_DISCONNECTED, handleUserDisconnect)
   }
 
   const removeSocketListeners = () => {
     socket.off(RECEIVE_MESSAGE, handleIncomingMessage)
+    socket.off(USER_CONNECTED, handleUserConnect)
     socket.off(USER_DISCONNECTED, handleUserDisconnect)
   }
 
@@ -46,11 +62,6 @@ const App = () => {
 
   return (
     <div>
-      <div>
-        {chatHistory.map((chatMessage) => (
-          <div>{chatMessage}</div>
-        ))}
-      </div>
       <input
         value={newMessage}
         onChange={(event) => setNewMessage(event.target.value)}
@@ -58,6 +69,13 @@ const App = () => {
       <button type="button" onClick={handleSentMessage}>
         Sent
       </button>
+      <div>
+        {chatHistory.map(({ id, message, from }) => (
+          <Message key={id} from={from}>
+            {message}
+          </Message>
+        ))}
+      </div>
     </div>
   )
 }
