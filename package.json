@@ -6,6 +6,7 @@
   "scripts": {
     "start": "set NODE_ENV=development && yarn lint && webpack serve",
     "build": "set NODE_ENV=production && yarn lint && webpack",
+    "netlify": "webpack",
     "lint": "yarn eslint --fix src",
     "format": "yarn prettier --write src"
   },
